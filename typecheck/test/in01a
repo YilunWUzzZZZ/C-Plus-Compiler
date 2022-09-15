@@ -1,0 +1,26 @@
+/*
+ *   variable decl 
+ *   
+ *
+ */
+
+
+
+    int i = 2, j=3;
+    
+    bool a,c=false;
+   
+	void main() {
+    double x=i, d=a;
+
+    char b=i;
+    string s ;
+    
+    int f;
+	f=2+i;  
+
+
+	}
+ 
+    
+

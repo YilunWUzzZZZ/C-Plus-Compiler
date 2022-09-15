@@ -1,0 +1,4 @@
+test/in05c:20.25:Error: Expected type bool for argument 2 of operator '&&' but got int
+test/in05c:20.32:Error: Boolean argument expected
+test/in05c:21.27:Error: Expected type bool for argument 1 of operator '||' but got int
+test/in05c:21.27:Error: Boolean argument expected

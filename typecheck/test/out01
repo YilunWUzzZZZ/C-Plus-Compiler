@@ -1,0 +1,3 @@
+test/in01:10.15:Error: Assigned type 'double' not a subtype of target type 'int'
+test/in01:22.16:Error: Assigned type 'bool' not a subtype of target type 'double'
+test/in01:25.16:Error: Assigned type 'int' not a subtype of target type 'string'

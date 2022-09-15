@@ -1,0 +1,38 @@
+/*
+ *  return stmt 
+ *
+ *
+ */
+
+    int a,b,c;
+
+    double x,y;
+
+    string s1,s2;    
+
+    string file ;
+    int flags;
+    unsigned int mode;
+
+    int g(int a, int b, double x){
+        x=a+b;
+	return x;		
+    };
+
+    void f(string s1, string s2){
+	x=y+2;
+        return x;
+    };
+
+    int h(unsigned int m, int n){
+	s1="adafdfds";
+	return 0.;
+    };
+ 
+    void open(string file, int flags, int mode) {
+           string cs;
+           g(b,c,y); 
+           f(s2, cs);		         
+  
+    };
+   

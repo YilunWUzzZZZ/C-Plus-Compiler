@@ -1,0 +1,225 @@
+#include "cpluslib/c+lib.h"
+int foo(int x) {
+    return x+1;
+}
+
+int testCP() {
+    int x=1,t=2;
+    double z = 1.0, e;
+    if (x < 0) {
+        int a = 2;
+        t = a + x; 
+        if (a<0) {
+            x = 3;
+            a = x+5;
+        }
+    } else  {
+        t = 3;
+        e = foo(x) + z;
+    }
+    print(t, e);
+    print("\\n");
+    return 0;
+}
+
+
+
+void sort(int a[], int size) {
+    int i=size-1; 
+    int j;
+    // sort 
+    while (i >0) do {
+        j = 0;
+        while (j < i) do {
+            if (a[j] > a[j+1]) {
+                int t = a[j+1];
+                a[j+1] = a[j];
+                a[j] = t;
+            }
+            j = j+1;
+        }
+        i = i -1;
+    }
+    return;
+}
+
+
+int readUInt() {
+    bool done = false;
+    int i=0;
+    while (done == false) do {
+        char c = readc();
+        if (c <48 || c>57) {
+            done = true;
+        } else {
+            i = i*10 + (c-48);
+        }
+    }
+    //printr("readed ", i, "\\n");
+    return i;
+}
+
+int testSorting() {
+    int cnt=0;
+    int size;
+    print("enter the size of the array\\n");
+    size  = readUInt();
+    print("enter the the array of size", size, "now\\n");
+    { 
+        int x[size];
+        while (cnt < size) do {
+            x[cnt] = readUInt();
+            cnt = cnt+1;
+        }
+        sort(x, size);
+        cnt = 0;
+        while (cnt < size) do {
+            print(x[cnt]);
+            print(" ");
+            cnt = cnt+1;
+        }
+    }
+    print("\\n");
+  
+    return 0;
+}
+
+void testSort2() {
+    int i=0;
+    int a[5] = {3,2,1,0,8};
+    sort(a, 5);
+    print("expecting: 0,1,2,3,8\\ngot: ");
+    while (i < 5) do {
+        printr(a[i], " ");
+        i = i+1;
+    }
+    print("\\n");
+    return;
+}
+
+void fibonacci(int num) {
+    int a1 = 0, a2 = 1;
+    int i=0;
+    if (num <= 0) {
+        return;
+    } else if (num == 1) {
+        print(0);
+    } else if (num >= 2) {
+        print(0,1);
+        print(" ");
+    }
+    num = num -2;
+    while (num > 0) do {
+        int tmp = a2;
+        a2 = a1+a2;
+        a1 = tmp;
+        print(a2);
+        print(" ");
+        num = num -1;
+    }
+    print("\\n");
+    return;
+}
+
+int testArray() {
+    int arraySize = 6;
+    int x = 2;
+    int a[arraySize] = {1,2,3};
+    int b[x][arraySize];
+    b[0][1] = a[1];
+    b[1][a[2]] = b[0][1] + a[0];
+    print("expecting 1 2 2 3\\n got: ");
+    print(a[0], a[1], b[0][1], b[1][3], "\\n");
+    return 0;
+}
+
+void testDoubleLoop() {
+    int a[2][2] = {0,1,2,3};
+    int i=0, j=0;
+    while (i < 2) do {
+        while (j < 2) do {
+            printr(a[i][j], " ");
+            j = j+1;
+        }
+        j = 0;
+        i = i+1;
+    }
+    print("\\n");
+    return;
+}
+
+int fact(int x) {
+    if (x == 1) {
+        return 1;
+    }
+    return x* fact(x-1);
+}
+
+void testFact() {
+    int x = fact(6);
+    print("expecting: 720\\ngot: ");
+    print(x);
+    print("\\n");
+    return;
+}
+
+int main() {
+    print("-------Test Simple VLA---------\\n");
+    testArray();
+    print("-------Test Factorial---------\\n");
+    testFact();
+    print("-------Test Constant Prop---------\\n");
+    testCP();
+    print("-------Test Fibonacci---------\\n");
+    fibonacci(10);
+    print("-------Test Sort2---------\\n");
+    testSort2();
+    print("-------Test Sorting---------\\n");
+    testSorting();
+    print("-------Test DoubleLoop---------\\n");
+    testDoubleLoop();
+    return 0;
+}
+
+// int main() {
+//     int a =0,b;
+//     int c=1;
+//     if (a > 0) {
+//         b = 1;
+//         return b;
+//         c = a+b;
+//     } else if (a<0){
+//         b = 4;
+//         if (b==4) {
+//             return 1;
+//         }
+//         return b;
+//     } else {
+//         c = 5;
+//     }
+//     while (c >= 0) do {
+//         c = c-1;
+//         if (c == 4) {
+//             return 0;
+//         } else {
+//             return 1;
+//         }
+//     }
+//     ;
+// }
+
+// int main() {
+//     int x = 3, y=5, a= 1;
+//     if (x > 0) {
+//         x = x+5;
+//     } else {
+//         y = y+1;
+//         if (a>0) {
+//             y = a+1;
+//         } else {
+//             x = a+1;
+//         }
+//     }
+    
+//     return 1;
+// }

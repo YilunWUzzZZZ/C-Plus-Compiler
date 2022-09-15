@@ -1,0 +1,2 @@
+test/in01a:14.20:Error: Assigned type 'bool' not a subtype of target type 'double'
+test/in01a:16.13:Warning: Signedness or possible integer overflow in assignment

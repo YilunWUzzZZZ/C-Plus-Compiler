@@ -1,0 +1,101 @@
+void merge(int arr[], int l, int m, int r)
+{
+    int i, j, k;
+    int n1 = m - l + 1;
+    int n2 = r - m;
+    int a;
+ 
+    int L[n1], R[n2];
+ 
+    i = 0;
+    while (i < n1) do {
+        L[i] = arr[l + i];
+        i = i + 1;
+    }
+    j = 0;
+    while (j < n2) do {
+        R[j] = arr[m + 1 + j];
+        j = j + 1;
+    }
+ 
+    i = 0; // Initial index of first subarray
+    j = 0; // Initial index of second subarray
+    k = l; // Initial index of merged subarray
+    while (i < n1 && j < n2) do {
+        if (L[i] <= R[j]) {
+            arr[k] = L[i];
+            i = i + 1;
+        }
+        else {
+            arr[k] = R[j];
+            j = j + 1;
+        }
+        k = k + 1;
+    }
+    a = 0;
+    while (i < n1) do {
+        arr[k] = L[i];
+        i = i + 1;
+        k = k + 1;
+    }
+    a = 0;
+    while (j < n2) do {
+        arr[k] = R[j];
+        j = j + 1;
+        k = k + 1;
+    }
+    a = 0;
+    return ;
+}
+ 
+void mergeSort(int arr[], int l, int r)
+{
+    if (l < r) {
+        // Same as (l+r)/2, but avoids overflow for
+        // large l and h
+        int m = l + (r - l) / 2;
+ 
+        // Sort first and second halves
+        mergeSort(arr, l, m);
+        mergeSort(arr, m + 1, r);
+ 
+        merge(arr, l, m, r);
+    }
+    return ;
+}
+ 
+void printArray(int A[], int size)
+{
+    int i = 0;
+    while (i < size) do {
+        print(A[i]);
+        print(" ");
+        i = i + 1;
+    }
+    print("\\n");
+    return ;
+}
+ 
+int main()
+{
+    int arr_size = 6;
+    int b = 10;
+    int i = 0;
+    int arr[arr_size] = {13, 12, 5, 4, 20};
+    print(arr[0]);
+    print("\\n");
+    arr[0] = 13;
+    arr[1] = 12;
+    arr[2] = 5;
+    arr[3] = 4;
+    arr[5] = 20;
+
+    print("Given array is \\n");
+    printArray(arr, arr_size);
+ 
+    mergeSort(arr, 0, arr_size - 1);
+ 
+    print("Sorted array is \\n");
+    printArray(arr, arr_size);
+    return 0;
+}

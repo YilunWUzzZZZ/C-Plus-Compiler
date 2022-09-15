@@ -1,0 +1,16 @@
+For other error cases, I couldn't able to reproduce same problem with smaller
+program. May be some optimizations are happening while many registers are being
+used. So, here I am pointing out the issues.
+
+
+In chess.c+, if we remove two print statement in line no 173 and 176, global
+variable doesn't get updated.
+
+
+If we dont add two statements in line no 604 and 605, then the "if" of line
+661 loads wrong values (always 0) for parameters "r1" and "c1"
+
+
+also, 
+some compound if structures were not working back to back, so I had to add
+garbage statements in between them. Like in the function "pawn" in line 601.

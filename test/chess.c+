@@ -1,0 +1,1081 @@
+#include "../cpluslib/c+lib.h"
+
+bool check;
+string board[8][8];
+int player;
+bool done;
+string pawn1, pawn2, rook1, rook2, horse1, horse2, bishop1, bishop2, king1, king2, queen1,queen2;
+string emptyString;
+
+void initialize(){
+    int i = 0; // dead code
+    pawn1 = 'P';
+    rook1 = 'R';
+    horse1 = 'H';
+    bishop1 = 'B';
+    king1 = 'K';
+    queen1 = 'Q';
+
+    pawn2 = 'p';
+    rook2 = 'r';
+    horse2 = 'h';
+    bishop2 = 'b';
+    king2 = 'k';
+    queen2 = 'q';
+    emptyString = ' ';
+
+    board[0][0] = 'R';
+    board[0][1] = 'H';
+    board[0][2] = 'B';
+    board[0][3] = 'K';
+    board[0][4] = 'Q';
+    board[0][5] = 'B';
+    board[0][6] = 'H';
+    board[0][7] = 'R';
+
+    board[1][0] = 'P';
+    board[1][1] = 'P';
+    board[1][2] = 'P';
+    board[1][3] = 'P';
+    board[1][4] = 'P';
+    board[1][5] = 'P';
+    board[1][6] = 'P';
+    board[1][7] = 'P';
+
+    board[2][0] = ' ';
+    board[2][1] = ' ';
+    board[2][2] = ' ';
+    board[2][3] = ' ';
+    board[2][4] = ' ';
+    board[2][5] = ' ';
+    board[2][6] = ' ';
+    board[2][7] = ' ';
+
+    board[3][0] = ' ';
+    board[3][1] = ' ';
+    board[3][2] = ' ';
+    board[3][3] = ' ';
+    board[3][4] = ' ';
+    board[3][5] = ' ';
+    board[3][6] = ' ';
+    board[3][7] = ' ';
+
+    board[4][0] = ' ';
+    board[4][1] = ' ';
+    board[4][2] = ' ';
+    board[4][3] = ' ';
+    board[4][4] = ' ';
+    board[4][5] = ' ';
+    board[4][6] = ' ';
+    board[4][7] = ' ';
+
+    board[5][0] = ' ';
+    board[5][1] = ' ';
+    board[5][2] = ' ';
+    board[5][3] = ' ';
+    board[5][4] = ' ';
+    board[5][5] = ' ';
+    board[5][6] = ' ';
+    board[5][7] = ' ';
+
+    board[6][0] = 'p';
+    board[6][1] = 'p';
+    board[6][2] = 'p';
+    board[6][3] = 'p';
+    board[6][4] = 'p';
+    board[6][5] = 'p';
+    board[6][6] = 'p';
+    board[6][7] = 'p';
+
+    board[7][0] = 'r';
+    board[7][1] = 'h';
+    board[7][2] = 'b';
+    board[7][3] = 'k';
+    board[7][4] = 'q';
+    board[7][5] = 'b';
+    board[7][6] = 'h';
+    board[7][7] = 'r';
+
+    return;
+}
+
+void display() {
+    int i=0 , j = 0, k=0 ;
+
+    print( " " ) ;
+
+    while (i<8) do {
+        print("    ");
+        print(i);
+        i = i+1;
+    }
+
+    print( "\\n" ) ;
+
+    while (k<8) do {
+        print( "  " ) ;
+        i = 0;
+        while (i<42) do {
+            print( "-" ); 
+            i = i+1;
+        } 
+
+        print( "\\n" ) ; 
+        print(k);
+        print( " " ) ;
+        j = 0;
+        while (j<8) do {
+            print("|| ");
+            print(board[k][j]);
+            print(" ") ; 
+            j = j+1;
+        }
+        print( "|| \\n" ) ;
+        k = k + 1;
+    }
+    
+    print( "  " ) ;
+    i = 0;
+    while (i<42) do {
+        print( "-" ); 
+        i = i+1;
+    } 
+
+    return;
+
+}
+
+int readUInt() {
+    bool loop = false;
+    int i=0;
+    while (loop == false) do {
+        char c = readc();
+        if (c <48 || c>57) {
+            loop = true;
+        } else {
+            i = i*10 + (c-48);
+        }
+    }
+    return i;
+}
+
+void change( int r1 , int c1 , int r2 , int c2 ) {
+    
+    if (player == 1 && board[r2][c2] == king2){
+        print("Player 1 has won the game!!\\n");
+        done = true;
+    } else if (player == 2 && board[r2][c2] == king1){
+        print("Player 2 has won the game!!\\n");
+        done = true;
+    } 
+    
+    //print(board[r1][c1]);
+    board[r2][c2] = board[r1][c1];
+    board[r1][c1] = ' ';
+    //print(board[r2][c2],"\\n");
+    
+    return;    
+}
+
+int catch(int r1 , int c1 ) {   
+    if ( r1 < 0 || r1 >7 || c1<0 || c1>7) {
+        return 0;
+    }
+
+    if (player == 1){
+
+        if (board[r1][c1] == pawn2 || board[r1][c1] == rook2 || board[r1][c1] == horse2 || board[r1][c1] == bishop2 || board[r1][c1] == king2 || board[r1][c1] == queen2) {
+            return 1;
+        } else {
+            return 0;
+        }
+    } else {
+        if (board[r1][c1] == pawn1 || board[r1][c1] == rook1 || board[r1][c1] == horse1 || board[r1][c1] == bishop1 || board[r1][c1] == king1 || board[r1][c1] == queen1) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+}
+
+int catchCheck(int r1 , int c1 ) {   
+    if ( r1 < 0 || r1 >7 || c1<0 || c1>7) {
+        return 0;
+    }
+
+    if (player == 1){
+
+        if (board[r1][c1] == king2) {
+            return 1;
+        } else {
+            return 0;
+        }
+    } else {
+        if (board[r1][c1] == king1) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+}
+
+void rook( int r1 , int c1 )
+{
+    int i , j , n ;
+    bool loopbreak = false;
+    print( "Available positions are: \\n" ) ;
+
+    n=c1;
+
+    print( "Horizontally: \\n" ) ;
+
+    while ( n > 0 && loopbreak == false) do {
+        if( catch(r1,n-1) == 1){
+            print(r1);
+            print(n-1);
+            print("* , ");
+            loopbreak = true;
+        } else if (board[r1][n-1] == emptyString){
+            print(r1);
+            print(n-1);
+            print(" , ");
+            n = n-1;
+        } else loopbreak=true;
+    }
+
+    loopbreak = false;
+    n=c1 ;
+
+    while( n < 7 && loopbreak == false) do{
+        
+        if( catch(r1,n+1) == 1){
+            print(r1);
+            print(n+1 ) ;
+            print("* , ");
+            loopbreak = true;
+        } else if (board[r1][n+1] == emptyString){
+            print( r1 );
+            print( n+1 ) ;
+            print(" , ");
+            n = n + 1;
+        } else loopbreak=true;
+    }
+
+    print( "\\nVertically:\\n" ) ;
+
+    n = r1 ;
+    loopbreak = false;
+
+    while ( n > 0 && loopbreak == false) do {
+        if( catch(n-1, c1) == 1){
+            print( n-1 );
+            print( c1 ) ;
+            print("* , ");
+            loopbreak = true;
+        } else if (board[n-1][c1] == emptyString){
+            print( n-1 );
+            print( c1 ) ;
+            print(" , ");
+            n = n-1;
+        } else loopbreak=true;
+    }
+
+    n = r1 ;
+    loopbreak = false;
+
+    while( n < 7 && loopbreak == false) do {
+        
+        if( catch(n+1,c1) == 1){
+            print( n+1 );
+            print( c1 ) ;
+            print("* , ");
+            loopbreak = true;
+        } else if (board[n+1][c1] == emptyString){
+            print( n+1);
+            print( c1 ) ;
+            print(" , ");
+            n = n+1;
+        } else loopbreak=true;
+    }
+
+    return;
+}
+
+void horse( int r1 , int c1 )
+{
+    print( "Available positions are: \\n" ) ;
+
+    if(r1+2 <= 7 && c1+1 <= 7){
+        if( board[r1+2][c1+1] == emptyString ) {
+            print( r1+2 );
+            print( c1+1 ) ;
+            print(" , ");
+        } else if ( catch(r1+2,c1+1) == 1 ) {
+            print( r1+2 );
+            print( c1+1 ) ;
+            print("* , ");
+        }
+    }
+    if(r1+2 <= 7 && c1-1 >= 0){
+        if( board[r1+2][c1-1] == emptyString ) {
+            print( r1+2 );
+            print( c1-1 ) ;
+            print(" , ");
+        } else if ( catch(r1+2,c1-1) == 1 ) {
+            print( r1+2 );
+            print( c1-1 ) ;
+            print("* , ");
+        }
+    }
+    if(r1+1 <= 7 && c1+2 <= 7){
+        if( board[r1+1][c1+2] == emptyString ) {
+            print( r1+1 );
+            print( c1+2 ) ;
+            print(" , ");
+        } else if ( catch(r1+1,c1+2) == 1 ) {
+            print( r1+1 );
+            print( c1+2 ) ;
+            print("* , ");
+        }
+    }
+    if(r1+1 <= 7 && c1-2 >= 0){
+        if( board[r1+1][c1-2] == emptyString ) {
+            print( r1+1 );
+            print( c1-2 ) ;
+            print(" , ");
+        } else if ( catch(r1+1,c1-2) == 1 ) {
+            print( r1+1 );
+            print( c1-2 ) ;
+            print("* , ");
+        }
+    }
+    if(r1-2 >= 0 && c1+1 <= 7){
+        if( board[r1-2][c1+1] == emptyString ) {
+            print( r1-2 );
+            print( c1+1 ) ;
+            print(" , ");
+        } else if ( catch(r1-2,c1+1) == 1 ) {
+            print( r1-2 );
+            print( c1+1 ) ;
+            print("* , ");
+        }
+    }
+    if(r1-2 >= 0 && c1-1 >= 0){
+        if( board[r1-2][c1-1] == emptyString ) {
+            print( r1-2 );
+            print( c1-1 ) ;
+            print(" , ");
+        } else if ( catch(r1-2,c1-1) == 1 ) {
+            print( r1-2 );
+            print( c1-1 ) ;
+            print("* , ");
+        }
+    }
+    if(r1-1 >= 0 && c1+2 <= 7){
+        if( board[r1-1][c1+2] == emptyString ) {
+            print( r1-1 );
+            print( c1+2 ) ;
+            print(" , ");
+        } else if ( catch(r1-1,c1+2) == 1 ) {
+            print( r1-1 );
+            print( c1+2 ) ;
+            print("* , ");
+        }
+    }
+    if(r1-1 >= 0 && c1-2 >= 0){
+        if( board[r1-1][c1-2] == emptyString ) {
+            print( r1-1 );
+            print( c1-2 ) ;
+            print(" , ");
+        } else if ( catch(r1-1,c1-2) == 1 ) {
+            print( r1-1 );
+            print( c1-2 ) ;
+            print("* , ");
+        }
+    }
+
+    return;
+}
+
+void bishop( int r1 , int c1 )
+{
+    int a , b , c , d ;
+    bool loopbreak = false;
+    print( "Available positions are: \\n" ) ;
+    print( "Diagonally: \\n");
+
+    a = 1;
+    b = 1 ;
+
+    while (r1-a >= 0 && c1+b <=7 && loopbreak == false) do {
+        if (catch(r1-a,c1+b) == 1){
+            print( r1-a );
+            print( c1+b ) ;
+            print("* , ");
+            loopbreak = true;
+        } else if (board[r1-a][c1+b] == emptyString ){
+            print( r1-a );
+            print( c1+b ) ;
+            print(" , ");
+            a = a+1; ;
+            b = b+1;
+        } else loopbreak = true;
+    }
+
+
+    a = 1; 
+    b = 1 ;
+    loopbreak = false;
+
+    while (r1-a >= 0 && c1-b >=0 && loopbreak == false) do{
+        if (catch(r1-a,c1-b) == 1){
+            print( r1-a );
+            print( c1-b ) ;
+            print("* , ");
+            loopbreak = true;
+        } else if (board[r1-a][c1-b] == emptyString ){
+            print( r1-a );
+            print( c1-b ) ;
+            print(" , ");
+            a = a+1; ;
+            b = b+1;
+        } else loopbreak = true;
+    }
+
+    a = 1;
+     b = 1 ;
+    loopbreak = false;
+
+    while (r1+a <= 7 && c1+b <=7 && loopbreak == false) do{
+        if (catch(r1+a,c1+b) == 1){
+            print( r1+a );
+            print( c1+b ) ;
+            print("* , ");
+            loopbreak = true;
+        } else if (board[r1+a][c1+b] == emptyString ){
+            print( r1+a );
+            print( c1+b ) ;
+            print(" , ");
+            a = a+1; ;
+            b = b+1;
+        } else loopbreak = true;
+    }
+
+    a = 1 ;
+    b = 1 ;
+    loopbreak = false;
+
+    while (r1+a <= 7 && c1-b >= 0 && loopbreak == false) do {
+        if (catch(r1+a,c1-b) == 1){
+            print( r1+a );
+            print( c1-b ) ;
+            print("* , ");
+            loopbreak = true;
+        } else if (board[r1+a][c1-b] == emptyString ){
+            print( r1+a );
+            print( c1-b ) ;
+            print(" , ");
+            a = a+1; ;
+            b = b+1;
+        } else loopbreak = true;
+    }
+
+    return;
+}
+
+void king( int r1 , int c1 )
+{
+    print( "Available positions are: \\n" ) ;
+
+    if( board[r1][c1+1] == emptyString ) {
+            print( r1 );
+            print( c1+1 ) ;
+            print(" , ");
+    }
+        
+
+    if( board[r1][c1-1] == emptyString ) {
+            print( r1 );
+            print( c1-1 ) ;
+            print(" , ");
+    }
+
+    if( board[r1+1][c1] == emptyString ) {
+            print( r1+1 );
+            print( c1 ) ;
+            print(" , ");
+    }
+
+    if( board[r1-1][c1] == emptyString ) {
+            print( r1-1 );
+            print( c1 ) ;
+            print(" , ");
+    }
+
+    if( board[r1+1][c1+1] == emptyString ) {
+            print( r1+1 );
+            print( c1+1 ) ;
+            print(" , ");
+    }
+
+    if( board[r1-1][c1-1] == emptyString ) {
+            print( r1-1 );
+            print( c1-1 ) ;
+            print(" , ");
+    }
+
+    if( board[r1-1][c1+1] == emptyString ) {
+            print( r1-1 );
+            print( c1+1 ) ;
+            print(" , ");
+    }
+
+    if( board[r1+1][c1-1] == emptyString ) {
+            print( r1+1 );
+            print( c1-1 ) ;
+            print(" , ");
+    }
+    
+    if( catch(r1,c1+1) == 1 ) {
+            print( r1 );
+            print( c1+1 ) ;
+            print("* , ");
+    }
+
+    if( catch(r1,c1-1) == 1 ) {
+            print( r1 );
+            print( c1-1 ) ;
+            print("* , ");
+    }
+
+    if( catch(r1+1,c1) == 1 ) {
+            print( r1+1 );
+            print( c1 ) ;
+            print("* , ");
+    }
+
+    if( catch(r1-1,c1) == 1 ) {
+            print( r1-1 );
+            print( c1 ) ;
+            print("* , ");
+    }
+
+    if( catch(r1+1,c1+1) == 1 ) {
+            print( r1+1 );
+            print( c1+1 ) ;
+            print("* , ");
+    }
+
+    if( catch(r1-1,c1-1) == 1 ) {
+            print( r1-1 );
+            print( c1-1 ) ;
+            print("* , ");
+    }
+
+    if( catch(r1-1,c1+1) == 1 ) {
+            print( r1-1 );
+            print( c1+1 ) ;
+            print("* , ");
+    }
+
+    if( catch(r1+1,c1-1) == 1 ) {
+            print( r1+1 );
+            print( c1-1 ) ;
+            print("* , ");
+    }
+
+    return;
+}
+
+void queen( int r1 , int c1 )
+{
+    rook(r1,c1);
+    bishop(r1,c1);
+
+    return;
+}
+
+void pawn( int r1 , int c1 ) 
+{
+    int col = c1; //dead code
+    int row = r1; //dead code
+
+    if (player == 1) {
+
+        print( "Available positions are: \\n" ) ;
+
+        if( r1 == 1 ) {
+            if( board[r1+1][c1] == emptyString ){
+                print( r1+1 );
+                print( c1 ) ;
+                print(" , ");
+            }
+            if( board[r1+2][c1] == emptyString ){
+                print( r1+2 );
+                print( c1 ) ;
+                print(" , ");
+            }
+            if( catch(r1+1 , c1+1) == 1 ) {
+                print( r1+1 );
+                print( c1+1 ) ;
+                print("* , ");
+            }
+            if( catch(r1+1 , c1-1) == 1 ) {
+                print( r1+1 );
+                print( c1-1 ) ;
+                print("* , ");
+            }
+
+        } else {   
+            if (r1+1 <= 7){
+                if(board[r1+1][c1] == emptyString ){
+                    print( r1+1 );
+                    print( c1 ) ;
+                    print(" , ");
+                }
+                if( catch(r1+1 , c1+1) == 1 ) {
+                    print( r1+1 );
+                    print( c1+1 ) ;
+                    print("* , ");
+                }
+                if( catch(r1+1 , c1-1) == 1 ) {
+                    print( r1+1 );
+                    print( c1-1 ) ;
+                    print("* , ");
+                }
+            }
+        }
+    }
+
+    if (player == 2) {
+
+        print( "Available positions are: \\n" ) ;
+
+        if( r1 == 6) {
+            if( board[r1-1][c1] == emptyString ){
+                print( r1-1 );
+                print( c1 ) ;
+                print(" , ");
+            }
+            if( board[r1-2][c1] == emptyString ){
+                print( r1-2 );
+                print( c1 ) ;
+                print(" , ");
+            }
+            if( catch(r1-1 , c1+1) == 1 ) {
+                print( r1-1 );
+                print( c1+1 ) ;
+                print("* , ");
+            }
+            if( catch(r1-1 , c1-1) == 1 ) {
+                print( r1-1 );
+                print( c1-1 ) ;
+                print("* , ");
+            }
+        } else {   
+            if (r1-1 >= 0){
+                if(board[r1-1][c1] == emptyString ){
+                    print( r1-1 );
+                    print( c1 ) ;
+                    print(" , ");
+                }
+                if( catch(r1-1 , c1+1) == 1 ) {
+                    print( r1-1 );
+                    print( c1+1 ) ;
+                    print("* , ");
+                }
+                if( catch(r1-1 , c1-1) == 1 ) {
+                    print( r1-1 );
+                    print( c1-1 ) ;
+                    print("* , ");
+                }
+            }
+        }
+    }
+
+    return;
+
+}
+
+void pawnCheck1( int r1 , int c1 ) {
+
+    if(board[r1+1][c1-1] == king2) {
+        check = true;
+    } else if(board[r1+1][c1+1] == king2) {
+        check = true;
+    }
+
+    return;
+}
+
+void pawnCheck2( int r1 , int c1 ) 
+{
+    if(board[r1-1][c1-1] == king1) {
+        check = true;
+    } else if(board[r1-1][c1+1] == king1) {
+        check = true;
+    }
+
+    return;
+
+}
+
+void rookCheck( int r1 , int c1 ) {
+    
+    int i , j , n ;
+    bool loopbreak = false;
+
+    n=c1;
+
+    while ( n > 0 && loopbreak == false) do {
+        if( catchCheck(r1,n-1) == 1){
+            check = true;
+            loopbreak = true;
+        } else if (board[r1][n-1] == emptyString){
+            n = n-1;
+        } else loopbreak=true;
+    }
+
+    loopbreak = false;
+    n=c1 ;
+
+    while( n < 7 && loopbreak == false) do{
+        
+        if( catchCheck(r1,n+1) == 1){
+            check = true;
+            loopbreak = true;
+        } else if (board[r1][n+1] == emptyString){
+            n = n + 1;
+        } else loopbreak=true;
+    }
+
+    n = r1 ;
+    loopbreak = false;
+
+    while ( n > 0 && loopbreak == false) do {
+        if( catchCheck(n-1, c1) == 1){
+            check = true;
+            loopbreak = true;
+        } else if (board[n-1][c1] == emptyString){
+            n = n-1;
+        } else loopbreak=true;
+    }
+
+    n = r1 ;
+    loopbreak = false;
+
+    while( n < 7 && loopbreak == false) do {
+        
+        if( catchCheck(n+1,c1) == 1){
+            check = true;
+            loopbreak = true;
+        } else if (board[n+1][c1] == emptyString){
+            n = n+1;
+        } else loopbreak=true;
+    }
+
+    return;
+}
+
+void horseCheck( int r1 , int c1 ) {
+
+    if(r1+2 <= 7 && c1+1 <= 7){
+        if ( catchCheck(r1+2,c1+1) == 1 ) {
+            check = true;
+        }
+    }
+    if(r1+2 <= 7 && c1-1 >= 0){
+        if (catchCheck(r1+2,c1-1) == 1 ) {
+            check = true;
+        }
+    }
+    if(r1+1 <= 7 && c1+2 <= 7){
+        if ( catchCheck(r1+1,c1+2) == 1 ) {
+            check = true;
+        }
+    }
+    if(r1+1 <= 7 && c1-2 >= 0){
+        if ( catchCheck(r1+1,c1-2) == 1 ) {
+            check = true;
+        }
+    }
+    if(r1-2 >= 0 && c1+1 <= 7){
+        if ( catchCheck(r1-2,c1+1) == 1 ) {
+            check = true;
+        }
+    }
+    if(r1-2 >= 0 && c1-1 >= 0){
+        if ( catchCheck(r1-2,c1-1) == 1 ) {
+            check = true;
+        }
+    }
+    if(r1-1 >= 0 && c1+2 <= 7){
+        if ( catchCheck(r1-1,c1+2) == 1 ) {
+            check = true;
+        }
+    }
+    if(r1-1 >= 0 && c1-2 >= 0){
+        if ( catchCheck(r1-1,c1-2) == 1 ) {
+            check = true;
+        }
+    }
+    return;
+}
+
+void bishopCheck( int r1 , int c1 ) {
+    
+    int a , b , c , d ;
+    bool loopbreak = false;
+
+    a = 1;
+    b = 1 ;
+
+    while (r1-a >= 0 && c1+b <=7 && loopbreak == false) do {
+        if (catchCheck(r1-a,c1+b) == 1){
+            check = true;
+            loopbreak = true;
+        } else if (board[r1-a][c1+b] == emptyString ){
+            a = a+1; ;
+            b = b+1;
+        } else loopbreak = true;
+    }
+
+
+    a = 1; 
+    b = 1 ;
+    loopbreak = false;
+
+    while (r1-a >= 0 && c1-b >=0 && loopbreak == false) do{
+        if (catchCheck(r1-a,c1-b) == 1){
+            check = true;
+            loopbreak = true;
+        } else if (board[r1-a][c1-b] == emptyString ){
+            a = a+1; ;
+            b = b+1;
+        } else loopbreak = true;
+    }
+
+    a = 1;
+     b = 1 ;
+    loopbreak = false;
+
+    while (r1+a <= 7 && c1+b <=7 && loopbreak == false) do{
+        if (catchCheck(r1+a,c1+b) == 1){
+            check = true;
+            loopbreak = true;
+        } else if (board[r1+a][c1+b] == emptyString ){
+            a = a+1; ;
+            b = b+1;
+        } else loopbreak = true;
+    }
+
+    a = 1 ;
+    b = 1 ;
+    loopbreak = false;
+
+    while (r1+a <= 7 && c1-b >= 0 && loopbreak == false) do {
+        if (catchCheck(r1+a,c1-b) == 1){
+            check = true;
+            loopbreak = true;
+        } else if (board[r1+a][c1-b] == emptyString ){
+            a = a+1; ;
+            b = b+1;
+        } else loopbreak = true;
+    }
+    return;
+}
+
+void queenCheck( int r1 , int c1 ) {
+
+    rookCheck(r1,c1);
+    bishopCheck(r1,c1);
+    return;
+}
+
+void player1()
+{
+    int p1 , p2 , c1 , r1 , c2 , r2;
+    bool valid_input;
+    print( "\\nPLAYER 1 - Upper Case\\n" ) ;
+
+    if (check == true){
+        print("\\nCHECK!! You need to save your king!\\n");
+        check = false;
+    }
+
+    valid_input = false;
+
+    while (valid_input == false) do {
+        print( "\\nWhich piece do you want to change? Enter position ( RowColumn i.e 10): " ) ;
+        p1 = readUInt();
+
+        c1 = p1 % 10 ;
+        r1 = p1 / 10 ;
+
+        if (board[r1][c1] == pawn1) {
+            pawn(r1,c1);
+            valid_input = true;
+        } else if (board[r1][c1] == rook1) {
+            rook( r1 , c1 ) ;
+            valid_input = true;
+        } else if (board[r1][c1] == horse1) {
+            horse(r1,c1);
+            valid_input = true;
+        } else if (board[r1][c1] == bishop1) {
+            bishop(r1,c1);
+            valid_input = true;
+        } else if (board[r1][c1] == king1) {
+            king(r1,c1);
+            valid_input = true;
+        } else if (board[r1][c1] == queen1) {
+            queen(r1,c1);
+            valid_input = true;
+        } else {
+            print ("Invalid Position ! ");
+        }
+    }
+
+    valid_input = false;
+
+    while (valid_input == false) do {
+
+        print( "\\nWhere do you want to move? Enter position ( RowColumn i.e 10 ): " ) ;
+        p2 = readUInt();
+
+        c2 = p2 % 10 ;
+        r2 = p2 / 10  ;
+
+        if ( r2 < 0 || r2 >7 || c2<0 || c2>7) {
+            print ("Invalid Position ! "); 
+        } else {
+            valid_input = true;
+        }
+    }
+
+    change(r1,c1,r2,c2) ;
+
+    if (board[r2][c2] == pawn1) {
+        pawnCheck1(r2,c2);
+    } else if (board[r2][c2] == rook1) {
+        rookCheck( r2 , c2 ) ;
+    } else if (board[r2][c2] == horse1) {
+        horseCheck(r2,c2);
+    } else if (board[r2][c2] == bishop1) {
+        bishopCheck(r2,c2);
+    } else if (board[r2][c2] == queen1) {
+        queenCheck(r2,c2);
+    } else {
+        print (" ");
+    }
+
+    return;
+
+}
+
+void player2()
+{
+    int p1 , p2 , c1 , r1 , c2 , r2;
+    bool valid_input;
+    print( "\\nPLAYER 2 - Lower Case\\n" ) ;
+
+    if (check == true){
+        print("\\nCHECK!! You need to save your king!\\n");
+        check = false;
+    }
+
+    valid_input = false;
+
+    while (valid_input == false) do {
+        print( "\\nWhich piece do you want to change? Enter position ( RowColumn i.e 10): " ) ;
+        p1 = readUInt();
+
+        c1 = p1 % 10 ;
+        r1 = p1 / 10 ;
+
+        if (board[r1][c1] == pawn2) {
+            pawn(r1,c1);
+            valid_input = true;
+        } else if (board[r1][c1] == rook2) {
+            rook(r1,c1);
+            valid_input = true;
+        } else if (board[r1][c1] == horse2) {
+            horse(r1,c1);
+            valid_input = true;
+        } else if (board[r1][c1] == bishop2) {
+            bishop(r1,c1);
+            valid_input = true;
+        } else if (board[r1][c1] == king2) {
+            king(r1,c1);
+            valid_input = true;
+        } else if (board[r1][c1] == queen2) {
+            queen(r1,c1);
+            valid_input = true;
+        } else {
+            print ("Invalid Position ! ");
+        }
+    }
+
+    valid_input = false;
+
+    while (valid_input == false) do {
+
+        print( "\\nWhere do you want to move? Enter position ( RowColumn i.e 10 ): " ) ;
+        p2 = readUInt();
+
+        c2 = p2 % 10 ;
+        r2 = p2 / 10  ;
+
+        if ( r2 < 0 || r2 >7 || c2<0 || c2>7) {
+            print ("Invalid Position ! "); 
+        } else {
+            valid_input = true;
+        }
+    }
+
+    change(r1,c1,r2,c2) ;
+    
+    if (board[r2][c2] == pawn2) {
+        pawnCheck2(r2,c2);
+    } else if (board[r2][c2] == rook2) {
+        rookCheck( r2 , c2 ) ;
+    } else if (board[r2][c2] == horse2) {
+        horseCheck(r2,c2);
+    } else if (board[r2][c2] == bishop2) {
+        bishopCheck(r2,c2);
+    } else if (board[r2][c2] == queen2) {
+        queenCheck(r2,c2);
+    } else {
+        print (" ");
+    }
+
+    return;
+
+}
+int main() {
+    int x = 0;
+    check = false;
+    done = false;
+    initialize();
+
+    while (done == false) do {
+        x = x + 1 ;
+        display();
+
+        if( (x%2) == 0 )
+        {  
+            player = 2;
+            player2();
+        }
+        else
+        {   
+            player = 1;
+            player1();
+        }
+    }
+
+
+    return 0;
+}
+

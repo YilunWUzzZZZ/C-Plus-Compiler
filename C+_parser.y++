@@ -1,0 +1,747 @@
+%{
+#include <iostream>
+#include "Ast.h"
+#include <string.h>
+#include <assert.h>
+#include <vector>
+#include "ParserUtil.h"
+#include "STEClasses.h"
+
+#define prt(x) cout << x << endl;
+
+extern int yylex();
+extern void yyerror(const char *s);
+using namespace std;
+
+%}
+
+%union{
+  unsigned int       uVal;
+  unsigned long      lVal;
+  double             dVal;
+  char*              cVal;
+  vector<VariableEntry*>* varVector;
+  Value*             valVal;
+
+  ExprNode*          exprVal;
+  vector<ExprNode*>* exprList;
+  RefExprNode*       refexpVal;
+
+  EnumEntry*         enumEntry;
+  vector<EnumElemEntry*>* enumElemList;
+  Type*              typeVal;
+  vector<Type*>*     typeList;
+
+  VariableEntry*     variableEntry;
+  FunctionEntry*     functionEntry;
+  BlockEntry*        blockEntry;
+
+  StmtNode*          stmtVal;
+  ListForNode*       listForVal;
+  WhileNode*         whileVal;
+  IfNode*	      ifval;
+  list<StmtNode*>*   stmtList;
+  CompoundStmtNode*  compoundStmtVal;
+
+  //OnEntry*           onVal;
+
+  vector<Type*>*     formalTypeVal;
+  const OpNode::OpInfo*    funIval;
+}
+
+/* Operators */
+
+%token TOK_LEX_ERROR TOK_COLON TOK_COMMA TOK_DOT TOK_SEMICOLON TOK_LBRACK TOK_RBRACK
+%token TOK_LPAREN TOK_RPAREN TOK_LBRACE TOK_RBRACE TOK_PLUS TOK_MINUS TOK_UMINUS
+%token TOK_MULT TOK_DIV TOK_ASSIGN TOK_AND TOK_OR TOK_NOT TOK_GT TOK_LT
+%token TOK_EQ TOK_NE TOK_GE TOK_LE TOK_MOD TOK_ARROW TOK_QMARK
+%token TOK_BITAND TOK_BITOR TOK_BITNOT TOK_BITXOR TOK_SHL TOK_SHR
+
+/* Key words */
+
+%token TOK_CHAR TOK_BIT TOK_BOOL TOK_SHORT TOK_INT TOK_LONG TOK_UNSIGNED
+%token TOK_CONST TOK_DOUBLE TOK_ELSE TOK_ENUM TOK_FALSE TOK_IF TOK_IN
+%token TOK_PRINT TOK_PRINTR TOK_RETURN TOK_STRING TOK_TRUE TOK_VOID TOK_LIST
+%token TOK_SET TOK_TUPLE TOK_DICT TOK_FOREACH TOK_WHILE TOK_DO TOK_EMPTY TOK_CLEAR
+%token TOK_LENGTH TOK_APPEND TOK_UNION TOK_INSERT TOK_ERASE TOK_CONTAINS TOK_REMOVE
+%token TOK_IP TOK_UINTNUM TOK_DOUBLENUM TOK_STRCONST TOK_ID TOK_ULONGNUM
+
+%type <functionEntry> func_decl func_const_decl func_head
+%type <variableEntry> formal_param single_var var var_init_opt single_formal_param
+%type <typeList> type_sequence
+%type <enumEntry> enum
+%type <enumElemList> enum_elem_list
+%type <typeVal> type known_type unknown_type primary_type builtin_type
+%type <typeVal> list_type set_type tuple_type dict_type
+%type <varVector> var_sequence
+%type <exprList> expr_param expr_plus
+%type <exprVal> expr expr_func expr_assignment builtin_func expr_list expr_set expr_tuple expr_dict
+%type <refexpVal> expr_ref single_ref expr_index
+%type <cVal>  TOK_ID
+%type <funIval> func
+%type <uVal> TOK_UINTNUM
+%type <lVal> TOK_ULONGNUM
+%type <dVal> TOK_DOUBLENUM
+%type <cVal> TOK_STRCONST
+%type <valVal> expr_literal
+//%type <cVal>   strconst
+%type <stmtList> stat_sequence stat_comp_body bad_body bad_body_star stat_bad_body
+%type <stmtVal> stat stat_empty stat_func stat_assign stat_return
+%type <listForVal> stat_for
+%type <whileVal> stat_while
+%type <ifval> stat_if
+%type <compoundStmtVal> func_body stat_comp
+%type <blockEntry> block_enter block_leave
+
+
+/*********************   Precedence and Associativity    ********************/
+%nonassoc TOK_ASSIGN
+%left TOK_COLON
+%left TOK_OR
+%left TOK_AND
+%left TOK_NOT
+%nonassoc TOK_EQ TOK_NE TOK_GT TOK_LT TOK_GE TOK_LE
+%left TOK_BITOR TOK_BITXOR
+%left TOK_BITAND
+%right TOK_BITNOT
+%left TOK_SHL TOK_SHR
+%left TOK_PLUS TOK_MINUS
+%left TOK_MULT TOK_DIV TOK_MOD
+%right NEG
+%right TOK_IF TOK_ELSE
+%right TOK_SEMICOLON TOK_RBRACE
+%right TOK_ID error "chooseStmt"
+
+/**************************************************************************/
+
+%start specification
+%%
+
+specification: global_decl_star;
+
+global_decl_star: /* empty */
+| global_decl_star global_decl
+;
+
+global_decl: enum
+| func
+| var_decl
+| TOK_SEMICOLON
+;
+
+/************************************ Enum ***********************************/
+
+
+enum: TOK_ENUM TOK_ID TOK_LBRACE enum_elem_list TOK_RBRACE {
+	$$ =  new EnumEntry($2, yylinenum, 0, yyfilename);
+	for (size_t i = 0; i < $4->size(); i++ )
+		$$->addElem($4->at(i));
+	ErrorST state = stm.insert( $$ );
+	if ( state == DUPLICATE_SYM )
+		errMsg("Redefinition of name " + string($2));
+	else if ( state == INVALID_SCOPE )
+		errMsg("Invalid Scope");
+}
+| TOK_ENUM TOK_ID error enum_elem_list TOK_RBRACE { errMsg("Expecting \"{\" following enum name"); }
+| TOK_ENUM TOK_SEMICOLON { errMsg("parse error: expecting enum name and element list"); }
+| TOK_ENUM TOK_ID TOK_LBRACE error { errMsg("Syntax error in enum element list, Expected \",\" or \"}\""); }
+| TOK_ENUM error TOK_RBRACE { errMsg("Syntax error while parsing enum declaration"); }
+;
+
+enum_elem_list: TOK_ID {
+	$$ = new vector<EnumElemEntry*>();
+	EnumElemEntry *elem = new EnumElemEntry($1, $$->size(), nullptr, yylinenum, 0, yyfilename);
+	$$->push_back(elem);
+	ErrorST state = stm.insert( elem );
+	if ( state == DUPLICATE_SYM )
+		errMsg("Redefinition of name " + string($1));
+	else if ( state == INVALID_SCOPE )
+		errMsg("Invalid Scope");
+}
+| enum_elem_list TOK_COMMA TOK_ID {
+	EnumElemEntry *elem = new EnumElemEntry($3, $$->size(), nullptr, yylinenum, 0, yyfilename);
+	$$->push_back(elem);
+	ErrorST state = stm.insert( elem );
+	if ( state == DUPLICATE_SYM )
+		errMsg("Redefinition of name " + string($3));
+	else if ( state == INVALID_SCOPE )
+		errMsg("Invalid Scope");
+}
+;
+
+/************************************ Type ***********************************/
+
+type: known_type { $$ = $1; }
+| unknown_type { $$ = $1; }
+;
+
+known_type: primary_type { $$ = $1; }
+| builtin_type { $$ = $1; }
+;
+
+unknown_type: TOK_ID { $$ = new Type(Type::UNKNOWN); }
+;
+
+primary_type: TOK_BOOL { $$ = new Type(Type::BOOL); }
+| TOK_STRING { $$ = new Type(Type::STRING); }
+| TOK_SHORT { $$ = new Type(Type::SHORT); }
+| TOK_LONG { $$ = new Type(Type::LONG); }
+| TOK_INT { $$ = new Type(Type::INT); }
+| TOK_CHAR { $$ = new Type(Type::CHAR); }
+| TOK_BIT { $$ = new Type(Type::BIT); }
+| TOK_DOUBLE { $$ = new Type(Type::DOUBLE); }
+| TOK_VOID { $$ = new Type(Type::VOID); }
+| TOK_UNSIGNED TOK_INT { $$ = new Type(Type::UINT); }
+| TOK_UNSIGNED TOK_CHAR { $$ = new Type(Type::UCHAR); }
+| TOK_UNSIGNED TOK_LONG { $$ = new Type(Type::ULONG); }
+| TOK_UNSIGNED TOK_SHORT { $$ = new Type(Type::USHORT); }
+;
+
+builtin_type: list_type { $$ = $1; }
+| set_type { $$ = $1; }
+| tuple_type { $$ = $1; }
+| dict_type { $$ = $1; }
+;
+
+list_type: type TOK_LIST { $$ = new Type( $1, Type::VECTOR); }
+;
+
+set_type: type TOK_SET { $$ = new Type( $1, Type::SET); }
+;
+
+tuple_type: TOK_TUPLE TOK_LPAREN type_sequence TOK_RPAREN { $$ = new Type($3, Type::TUPLE); }
+| TOK_TUPLE TOK_LPAREN error TOK_RPAREN { errMsg("Invalid tuple type declaration"); }
+;
+
+type_sequence: type { $$ = new vector<Type*>(); $$->push_back($1); }
+| type_sequence TOK_COMMA type { $$->push_back($3); }
+;
+
+dict_type: TOK_DICT TOK_LPAREN type TOK_COMMA type TOK_RPAREN { $$ = new Type($3, $5); }
+;
+
+/************************************ Variable ***********************************/
+
+var_decl: type var_sequence TOK_SEMICOLON {
+	for ( size_t i = 0; i < $2->size(); i++ ) {
+		$2->at(i)->type($1);
+	}
+}
+| TOK_CONST type var_sequence TOK_SEMICOLON {
+	$2->constType(true);
+	for ( size_t i = 0; i < $3->size(); i++ ) {
+		$3->at(i)->type($2);
+	}
+}
+| TOK_ID error TOK_SEMICOLON { errMsg("Error in variable declaration, may be a missing type name or identifier"); }
+| TOK_CONST type var_sequence error TOK_SEMICOLON {
+	$2->constType(true);
+	for ( size_t i = 0; i < $3->size(); i++ ) {
+		$3->at(i)->type($2);
+	}
+	errMsg("Error in variable declaration, may be a missing \",\" or identifier");
+}
+| type var_sequence error TOK_SEMICOLON {
+	for ( size_t i = 0; i < $2->size(); i++ ) {
+		$2->at(i)->type($1);
+	}
+	errMsg("Error in variable declaration, may be a missing \",\" or identifier");
+}
+| type error TOK_SEMICOLON { errMsg("Error in variable declaration, may be a missing identifier"); }
+;
+
+var: var TOK_LBRACK expr TOK_RBRACK {
+	$$ = $1; 
+	$1->addSubscript($3);
+}
+| single_var { $$ = $1; }
+;
+
+single_var: TOK_ID {
+	VariableEntry *var;
+	if (!stm.currentScope())
+		var = new VariableEntry($1, UNDEFINED, nullptr, 0, yylinenum, 0, yyfilename);
+	else {
+		switch ( stm.currentScope()->kind() ){
+			case SymTabEntry::GLOBAL_KIND:
+				var = new VariableEntry($1, GLOBAL_VAR, nullptr, 0, yylinenum, 0, yyfilename);
+				break;
+			case SymTabEntry::FUNCTION_KIND:
+				var = new VariableEntry($1, FN_PARAM_VAR, nullptr, 0, yylinenum, 0, yyfilename);
+				break;
+			case SymTabEntry::BLOCK_KIND:
+				var = new VariableEntry($1, LOCAL_VAR, nullptr, 0, yylinenum, 0, yyfilename);
+				break;
+			case SymTabEntry::ERROR_KIND:
+				var = new VariableEntry($1, COMPILER_GENERATED_VAR, nullptr, 0, yylinenum, 0, yyfilename);
+				break;
+			default:
+				var = new VariableEntry($1, UNDEFINED, nullptr, 0, yylinenum, 0, yyfilename);
+				break;
+		}
+	}
+	$$ = var;
+	ErrorST state = stm.insert(var);
+	if ( state == DUPLICATE_SYM ) {
+		errMsg("Redefinition of name " + string($1));
+	}
+	else if ( state == INVALID_SCOPE ) {
+		errMsg("Invalid Scope");
+	}
+}
+;
+
+var_init_opt: var TOK_ASSIGN expr {
+	$1->initVal($3);
+	$$ = $1;
+}
+| var { $$ = $1; }
+;
+
+var_sequence: var_init_opt { $$ = new vector<VariableEntry*>(); $$->push_back($1); }
+| var_sequence TOK_COMMA var_init_opt { $$ = $1; $$->push_back($3); }
+;
+
+/************************************ Expression ***********************************/
+expr_literal: TOK_UINTNUM { $$ = new Value($1); }
+| TOK_IP {  }
+| TOK_DOUBLENUM { $$ = new Value($1); }
+| TOK_STRCONST { $$ = new Value($1); }
+| TOK_TRUE { $$ =  new Value(Type::BaseTypeTag::BOOL, true); }
+| TOK_FALSE { $$ =  new Value(Type::BaseTypeTag::BOOL, false); }
+;
+
+expr_ref: single_ref { $$ = $1; }
+| expr_index { $$ = $1; }
+;
+
+single_ref: TOK_ID {
+	SymTabEntry *ste = stm.lookUp($1);
+	if(ste == nullptr || (ste->kind() != SymTabEntry::SymKind::VARIABLE_KIND && ste->kind() != SymTabEntry::SymKind::ENUM_ELEM_KIND)) {
+		$$ = nullptr;
+		errMsg("Undeclared identifier \"" + string($1) + "\"");
+	} else {
+		$$ = new RefExprNode(nullptr, $1, ste);
+	}
+  }
+;
+
+expr_index: expr_ref TOK_LBRACK expr TOK_RBRACK { if ($1 != nullptr) $1->addSubs($3); $$ = $1; }
+;
+
+expr_assignment: expr_ref TOK_ASSIGN expr { if($1 != nullptr && $3 != nullptr) $$ = new OpNode(OpNode::ASSIGN, $1, $3); else $$ = nullptr; }
+| expr_ref TOK_ASSIGN error { errMsg("Syntax error in assignment"); }
+;
+
+expr_func: TOK_ID TOK_LPAREN expr_param TOK_RPAREN {
+	SymTabEntry *ste = stm.lookUp($1);
+	if(ste == nullptr || ste->kind() != SymTabEntry::SymKind::FUNCTION_KIND) {
+		$$ = new InvocationNode(nullptr, $3);
+		errMsg("\"" + string($1) + "\" is not a function or module name");
+	} else {
+		$$ = new InvocationNode(ste, $3);
+	}
+}
+;
+
+expr_param:  { $$ = new vector<ExprNode*>(); }
+| expr_plus { $$ = $1; }
+| error { $$ = nullptr; }
+;
+
+expr_plus: expr { $$ = new vector<ExprNode*>(); $$->push_back($1); }
+| expr_plus TOK_COMMA expr { $$->push_back($3); }
+;
+
+expr_set: TOK_LBRACE expr_param TOK_RBRACE { $$ = new OpNode(OpNode::SET, $2); }
+;
+
+expr_list: TOK_LBRACK expr_param TOK_RBRACK { $$ = new OpNode(OpNode::VECTOR, $2); }
+;
+
+expr_dict: TOK_LBRACE expr TOK_COLON expr TOK_RBRACE { $$ = new OpNode(OpNode::DICT, new OpNode(OpNode::TUPLE, $2, $4)); }
+;
+
+expr_tuple: TOK_LPAREN expr TOK_COMMA expr_param TOK_RPAREN { $4->insert($4->begin(), $2); $$ = new OpNode(OpNode::TUPLE, $4); }
+;
+
+expr: TOK_BITNOT expr { if ($2 != nullptr) $$ = new OpNode(OpNode::BITNOT, $2); else $$ = nullptr; }
+| TOK_MINUS expr %prec NEG { if ($2 != nullptr) $$ = new OpNode(OpNode::UMINUS, $2); else $$ = nullptr; }
+| TOK_NOT expr { if ($2 != nullptr) $$ = new OpNode(OpNode::NOT, $2); else $$ = nullptr; }
+| TOK_LPAREN expr TOK_RPAREN { if ($2 != nullptr) $$ = $2; else $$ = nullptr; }
+| expr TOK_BITXOR expr { if($1 != nullptr && $3 != nullptr) $$ = new OpNode(OpNode::BITXOR, $1, $3); else $$ = nullptr; }
+| expr TOK_SHL expr { if($1 != nullptr && $3 != nullptr) $$ = new OpNode(OpNode::SHL, $1, $3); else $$ = nullptr; }
+| expr TOK_LE expr { if($1 != nullptr && $3 != nullptr) $$ = new OpNode(OpNode::LE, $1, $3); else $$ = nullptr; }
+| expr TOK_LT expr { if($1 != nullptr && $3 != nullptr) $$ = new OpNode(OpNode::LT, $1, $3); else $$ = nullptr; }
+| expr TOK_EQ expr { if($1 != nullptr && $3 != nullptr) $$ = new OpNode(OpNode::EQ, $1, $3); else $$ = nullptr; }
+| expr TOK_GE expr { if($1 != nullptr && $3 != nullptr) $$ = new OpNode(OpNode::GE, $1, $3); else $$ = nullptr; }
+| expr TOK_SHR expr { if($1 != nullptr && $3 != nullptr) $$ = new OpNode(OpNode::SHR, $1, $3); else $$ = nullptr; }
+| expr TOK_GT expr { if($1 != nullptr && $3 != nullptr) $$ = new OpNode(OpNode::GT, $1, $3); else $$ = nullptr; }
+| expr TOK_OR expr { if($1 != nullptr && $3 != nullptr) $$ = new OpNode(OpNode::OR, $1, $3); else $$ = nullptr; }
+| expr TOK_BITOR expr { if($1 != nullptr && $3 != nullptr) $$ = new OpNode(OpNode::BITOR, $1, $3); else $$ = nullptr; }
+| expr TOK_MINUS expr { if($1 != nullptr && $3 != nullptr) $$ = new OpNode(OpNode::MINUS, $1, $3); else $$ = nullptr; }
+| expr TOK_NE expr { if($1 != nullptr && $3 != nullptr) $$ = new OpNode(OpNode::NE, $1, $3); else $$ = nullptr; }
+| expr TOK_DIV expr { if($1 != nullptr && $3 != nullptr) $$ = new OpNode(OpNode::DIV, $1, $3); else $$ = nullptr; }
+| expr TOK_MULT expr { if($1 != nullptr && $3 != nullptr) $$ = new OpNode(OpNode::MULT, $1, $3); else $$ = nullptr; }
+| expr TOK_BITAND expr { if($1 != nullptr && $3 != nullptr) $$ = new OpNode(OpNode::BITAND, $1, $3); else $$ = nullptr; }
+| expr TOK_AND expr { if($1 != nullptr && $3 != nullptr) $$ = new OpNode(OpNode::AND, $1, $3); else $$ = nullptr; }
+| expr TOK_MOD expr { if($1 != nullptr && $3 != nullptr) $$ = new OpNode(OpNode::MOD, $1, $3); else $$ = nullptr; }
+| expr TOK_PLUS expr { if($1 != nullptr && $3 != nullptr) $$ = new OpNode(OpNode::PLUS, $1, $3); else $$ = nullptr; }
+| expr_literal { $$ = new ValueNode($1); }
+| expr_ref { $$ = $1; }
+| expr_assignment { $$ = $1; }
+| expr_func { $$ = $1; }
+| expr_set { $$ = $1; }
+| expr_list { $$ = $1; }
+| expr_dict { $$ = $1; }
+| expr_tuple { $$ = $1; }
+| builtin_func { $$ = $1; }
+;
+
+builtin_func: TOK_EMPTY TOK_LPAREN expr_param TOK_RPAREN {
+	if($3->size() < 1){
+		errMsg("Missing operand for \"empty\"");
+		$$ = nullptr;
+	}else{
+		$$ = new OpNode(OpNode::EMPTY, $3);
+	}
+  }
+| TOK_CLEAR TOK_LPAREN expr_param TOK_RPAREN {
+	if($3->size() < 1){
+		errMsg("Missing operand for \"clear\"");
+		$$ = nullptr;
+	}else{
+		$$ = new OpNode(OpNode::CLEAR, $3);
+	}
+  }
+| TOK_LENGTH TOK_LPAREN expr_param TOK_RPAREN {
+	if($3->size() < 1){
+		errMsg("Missing operand(s) for \"length\"");
+		$$ = nullptr;
+	}else{
+	        $$ = new OpNode(OpNode::LENGTH, $3);
+	}
+  }
+| TOK_APPEND TOK_LPAREN expr_param TOK_RPAREN {
+	if($3->size() < 2){
+		errMsg("Missing operand(s) for \"append\"");
+		$$ = nullptr;
+	}else{
+		$$ = new OpNode(OpNode::APPEND, $3);
+	}
+  }
+| TOK_UNION TOK_LPAREN expr_param TOK_RPAREN {
+	if($3->size() < 2){
+		errMsg("Missing operand(s) for \"union_\"");
+		$$ = nullptr;
+	}else{
+		$$ = new OpNode(OpNode::UNION, $3);
+	}
+  }
+| TOK_INSERT TOK_LPAREN expr_param TOK_RPAREN {
+	if($3->size() == 2) {
+		$$ = new OpNode(OpNode::INS_SET, $3);
+	}else if($3->size() == 3){
+		$$ = new OpNode(OpNode::INS_VEC, $3);
+	}else if($3->size() < 2){
+		errMsg("Missing operand(s) for \"insert\"");
+		$$ = nullptr;
+	}
+  }
+| TOK_ERASE TOK_LPAREN expr_param TOK_RPAREN {
+	if($3->size() < 2){
+		errMsg("Missing operand(s) for \"erase\"");
+		$$ = nullptr;
+	}else{
+		$$ = new OpNode(OpNode::ERASE, $3);
+	}
+  }
+| TOK_CONTAINS TOK_LPAREN expr_param TOK_RPAREN {
+	if($3->size() < 2){
+		errMsg("Missing operand(s) for \"contains\"");
+		$$ = nullptr;
+	}else{
+		$$ = new OpNode(OpNode::CONTAINS, $3);
+	}
+  }
+| TOK_REMOVE TOK_LPAREN expr_param TOK_RPAREN {
+	if($3->size() < 2){
+		errMsg("Missing operand(s) for \"remove\"");
+		$$ = nullptr;
+	}else{
+		$$ = new OpNode(OpNode::REMOVE, $3);
+	}
+   }
+| TOK_PRINT TOK_LPAREN expr_param TOK_RPAREN { $$ = new OpNode(OpNode::PRINT, $3); }
+| TOK_PRINTR TOK_LPAREN expr_param TOK_RPAREN { $$ = new OpNode(OpNode::PRINT_RAW, $3); }
+;
+
+/************************************ Statement ***********************************/
+
+
+stat: stat_if { $$ = $1; }
+| stat_empty { $$ = $1; }
+| stat_func { $$ = $1; }
+| stat_assign { $$ = $1; }
+| stat_return { $$ = $1; }
+| stat_comp { $$ = $1; }
+| stat_for { $$ = $1; }
+| stat_while { $$ = $1; }
+| TOK_LBRACE error TOK_RBRACE {
+	$$ = nullptr;
+	errMsg("Syntax error, expecting a statement");
+}
+;
+
+stat_if: TOK_IF expr stat { $$ = new IfNode($2, $3, nullptr); }
+| TOK_IF expr stat TOK_ELSE stat { $$ = new IfNode($2, $3, $5);  }
+| TOK_IF expr stat TOK_ELSE error TOK_RBRACE TOK_SEMICOLON {
+	$$ = new IfNode($2, $3, nullptr);
+	errMsg("Syntax error in else statement");
+}
+| TOK_IF expr stat TOK_ELSE error TOK_RBRACE {
+	$$ = new IfNode($2, $3, nullptr);
+	errMsg("Syntax error in else statement");
+}
+;
+
+stat_empty: TOK_SEMICOLON { $$ = new StmtNode(StmtNode::EMPTY); }
+;
+
+stat_func: expr_func TOK_SEMICOLON { $$ = new ExprStmtNode($1); }
+| builtin_func TOK_SEMICOLON { $$ = new ExprStmtNode($1); }
+;
+
+stat_assign: expr_assignment TOK_SEMICOLON {
+	if($1 == nullptr){
+		$$ = nullptr;
+	}else{
+		$$ = new ExprStmtNode($1);
+	}
+  }
+;
+
+stat_return: TOK_RETURN expr TOK_SEMICOLON {
+	FunctionEntry* fe = (FunctionEntry*) stm.currentScope(SymTabEntry::FUNCTION_KIND);
+	$$ = new ReturnStmtNode($2, fe);
+  }
+| TOK_RETURN TOK_SEMICOLON {
+	FunctionEntry* fe = (FunctionEntry*) stm.currentScope(SymTabEntry::FUNCTION_KIND);
+	$$ = new ReturnStmtNode(nullptr, fe);
+  }
+| TOK_RETURN error TOK_SEMICOLON { errMsg("Syntax error in return expression"); }
+;
+
+stat_for: TOK_FOREACH single_ref TOK_IN expr TOK_DO stat { $$ = new ListForNode($2, $4, $6); }
+| TOK_FOREACH single_ref TOK_IN expr stat { prt("For each statement"); errMsg("Expected keyword 'do'"); }
+| TOK_FOREACH error { errMsg("Syntax error in for statement"); }
+;
+
+stat_while: TOK_WHILE expr TOK_DO stat_comp { $$ = new WhileNode($2, $4); }
+| TOK_WHILE expr stat {
+	$$ = new WhileNode($2, nullptr);
+	errMsg("Expected keyword 'do'");
+}
+| TOK_WHILE error TOK_DO stat_comp {
+	//$$ = new WhileNode(nullptr, $4);
+	errMsg("Syntax error in while-statement condition");
+}
+;
+
+stat_comp: block_enter stat_comp_body block_leave { $$ = new CompoundStmtNode($1, $2); }
+| block_enter stat_bad_body block_leave { $$ = new CompoundStmtNode($1, $2); }
+;
+
+block_enter: TOK_LBRACE {
+	$$ = new BlockEntry("{", yylinenum, 0, yyfilename);
+ 	stm.enterScope($$);
+	stm.insert($$);
+}
+;
+
+block_leave: TOK_RBRACE { stm.leaveScope(); }
+| TOK_RBRACE TOK_SEMICOLON { stm.leaveScope(); }
+;
+
+var_decl_list:
+| var_decl_list var_decl
+;
+
+var_decl_list_2: var_decl { errMsg("Declarations should precede all statements"); }
+| var_decl_list_2 var_decl { errMsg("Declarations should precede all statements"); }
+;
+
+stat_comp_body: var_decl_list stat_sequence { $$ = $2; }
+;
+
+stat_bad_body: var_decl_list stat_sequence bad_body_star {
+	list<StmtNode*>::iterator it = $3->begin();
+	for(; it != $3->end(); it ++){
+		$2->push_back(*it);
+	}
+	$$ = $2;
+  }
+;
+
+bad_body: var_decl_list_2 stat_sequence { $$ = $2; } %prec "chooseStmt"
+;
+
+bad_body_star:  bad_body { $$ = $1; }
+| bad_body_star bad_body {
+	list<StmtNode*>::iterator it = $2->begin();
+	for(; it != $2->end(); it ++){
+		$1->push_back(*it);
+	}
+	$$ = $1;
+  }
+;
+
+stat_sequence: stat {
+  	$$ = new list<StmtNode*>();
+  	if($1 != nullptr){
+  		$$->push_back($1);
+  	}
+  }
+| stat_sequence stat {
+	if($1 != nullptr && $2 != nullptr){
+		$1->push_back($2);
+	}
+	$$ = $1;
+  }
+| stat_sequence error stat {
+	if($1 != nullptr && $3 != nullptr){
+		$1->push_back($3);
+	}
+	$$ = $1;
+	errMsg("Syntax error while parsing a statement");
+}
+;
+
+/************************************ Function ***********************************/
+
+
+func: func_decl TOK_SEMICOLON {
+	stm.leaveScope();
+}
+| func_const_decl TOK_SEMICOLON {
+	stm.leaveScope();
+}
+| func_decl func_body {
+	if ($1 != nullptr)
+		$1->body($2);
+	stm.leaveScope();
+}
+| func_const_decl func_body {
+	if ($1 != nullptr)
+		$1->body($2);
+	stm.leaveScope();
+}
+;
+
+func_head: type TOK_ID TOK_LPAREN {
+	$$ = new FunctionEntry($2, $1, yylinenum, 0, yyfilename);
+	ErrorST state = stm.insert($$);
+	if ( state == DUPLICATE_SYM )
+		errMsg("Redefinition of name " + $$->name());
+	else if ( state == INVALID_SCOPE )
+		errMsg("Invalid Scope");
+	stm.enterScope($$);
+}
+| TOK_CONST type TOK_ID TOK_LPAREN {
+	$2->constType(true);
+	$$ = new FunctionEntry($3, $2, yylinenum, 0, yyfilename);
+	ErrorST state = stm.insert($$);
+	if ( state == DUPLICATE_SYM )
+		errMsg("Redefinition of name " + $$->name());
+	else if ( state == INVALID_SCOPE )
+		errMsg("Invalid Scope");
+	stm.enterScope($$);
+}
+
+func_decl: func_head func_param TOK_RPAREN { $$ = $1; }
+| func_head TOK_RPAREN { $$ = $1; }
+/*| func_head type_missing TOK_RPAREN { errMsg("syntax error"); errMsg("Syntax error in formal parameter declaration"); }*/
+| func_head error TOK_RPAREN {
+	$$ = $1;
+	errMsg("Syntax error in formal parameter declaration");
+}
+| func_head func_param {
+	$$ = $1;
+	errMsg("Error while parsing function formal parameters, missing closing parenthesis");
+}
+| known_type TOK_LPAREN func_param TOK_RPAREN {
+	errMsg("Expecting a function declaration -- may be a missing function name");
+}
+| known_type TOK_LPAREN TOK_RPAREN { errMsg("Expecting a function declaration -- may be a missing function name"); }
+| TOK_ID error TOK_LPAREN func_param TOK_RPAREN { errMsg("Expecting a function declaration -- may be a missing type or a function name"); }
+| TOK_ID error TOK_LPAREN TOK_RPAREN { errMsg("Expecting a function declaration -- may be a missing type or a function name"); }
+;
+
+func_const_decl: func_head func_param TOK_RPAREN TOK_CONST { $$ = $1; }
+| func_head TOK_RPAREN TOK_CONST { $$ = $1; }
+/*| func_head type_missing TOK_RPAREN TOK_CONST { errMsg("syntax error"); errMsg("Syntax error in formal parameter declaration"); }*/
+| func_head error TOK_RPAREN TOK_CONST { $$ = $1; errMsg("Syntax error in formal parameter declaration"); }
+| func_head func_param  TOK_CONST { $$ = $1; errMsg("Error while parsing function formal parameters, missing closing parenthesis"); }
+| known_type TOK_LPAREN func_param TOK_RPAREN TOK_CONST { errMsg("Expecting a function declaration -- may be a missing function name"); }
+| known_type TOK_LPAREN TOK_RPAREN TOK_CONST { errMsg("Expecting a function declaration -- may be a missing function name"); }
+| TOK_ID error TOK_LPAREN func_param TOK_RPAREN TOK_CONST { errMsg("Expecting a function declaration -- may be a missing type or a function name"); }
+| TOK_ID error TOK_ID TOK_LPAREN TOK_RPAREN TOK_CONST { errMsg("Expecting a function declaration -- may be a missing type or a function name"); }
+;
+
+func_body: stat_comp { $$ = $1; }
+;
+
+func_param: formal_param
+| func_param TOK_COMMA formal_param
+| func_param TOK_COMMA error
+;
+
+single_formal_param: type TOK_ID {
+	$$ = new VariableEntry($2, FN_PARAM_VAR, $1, 0, yylinenum, 0, yyfilename);
+	ErrorST state = stm.insert($$);
+	if ( state == DUPLICATE_SYM ) {
+		errMsg("Redefinition of name " + string($2));
+	}
+	else if ( state == INVALID_SCOPE ) {
+		errMsg("Invalid Scope");
+	}
+}
+| TOK_CONST type TOK_ID {
+	$2->constType(true);
+	$$ = new VariableEntry($3, FN_PARAM_VAR, $2, 0, yylinenum, 0, yyfilename);
+	ErrorST state = stm.insert($$);
+	if ( state == DUPLICATE_SYM ) {
+		errMsg("Redefinition of name " + string($3));
+	}
+	else if ( state == INVALID_SCOPE ) {
+		errMsg("Invalid Scope");
+	}
+}
+;
+
+formal_param: single_formal_param { $$ = $1; }
+| formal_param TOK_LBRACK expr TOK_RBRACK {
+	$$ = $1;
+	$$->addSubscript($3);
+}
+| formal_param TOK_LBRACK  TOK_RBRACK {
+	$$ = $1;
+	$$->addSubscript(nullptr);
+}
+;
+
+
+/*
+id_list: TOK_ID { }
+| id_list TOK_COMMA TOK_ID
+;
+
+type_missing: formal_param TOK_COMMA id_list TOK_COMMA
+| id_list
+| id_list TOK_COMMA formal_param
+| formal_param TOK_COMMA id_list
+;
+*/
+
+
+%%

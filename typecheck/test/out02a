@@ -1,0 +1,2 @@
+test/in02a:25.28:Error: g: Type mismatch for argument 2 (expected: int, got bool)
+test/in02a:26.25:Error: f: Type mismatch for argument 2 (expected: int, got bool)

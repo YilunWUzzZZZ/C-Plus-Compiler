@@ -1,0 +1,12 @@
+// this generates compilation error with assembler
+// generated JMPC instruction has one string operand which in incompatible
+// with assembler definition; string operand can be loaded to a register
+// before using in JMPC instruction to solve this issue
+
+int main() {
+    string ss = "abc";
+    if ( ss == "abc"){
+        print(ss);
+    }
+    return 0;
+}        

@@ -1,0 +1,41 @@
+/* 
+ * Tests: operators
+ */
+
+    int logMessage(string x) ;	
+    bool condition;
+    int i = 2 ;
+    int j = 3 ;
+    int k = 4 ;
+    double f = 3.3;
+
+    string s ;
+
+    bool bo ;
+    bool bo1, bo2, bo3 ;
+ 
+ 
+    int open(string file, int flags, int mode)  {
+        
+        if(!(i<6) && i || j >=k)
+                if (i||bo1) {
+                        f = (23 * (-i)/j) - f  - (45 % j) ;
+                }
+                else {
+                	;
+		}
+        else
+                k = k << (j >> i) ;
+
+        if(!bo && bo1<=bo2 || bo2 >=bo3)
+                if ((bo3 < bo1) || (bo > bo2)) {
+                        f = (23 * (-i)/j) - f  - (45 % j) ;
+                        bo = ((bo3 < bo1) || (bo > bo2)) ;
+                }
+	if(i!=f){;}
+	if(i==f) {;}
+	if(i == j) {;}
+	if(f > i && i<k) {;}
+
+        } ;
+

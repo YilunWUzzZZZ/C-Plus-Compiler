@@ -1,0 +1,3 @@
+test/in05a:37.15:Error: Expected type integral for argument 1 of operator '%' but got double
+test/in05a:39.19:Error: Expected type numeric for argument 2 of operator '-' but got bool
+test/in05a:43.19:Error: Expected type numeric for argument 2 of operator '/' but got string

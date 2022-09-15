@@ -1,0 +1,13 @@
+int main(){
+    int i = 0, j=0;
+    while (i<8) do{
+        print(i,"\\n");
+        i = i + 1;
+    }
+    while (j<8) do{
+        print(j,"\\n");
+        j = j + 1;
+    } 
+    return 0;
+}
+

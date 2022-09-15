@@ -1,0 +1,5 @@
+test/in05b:14.34:Error: Expected type integral for argument 1 of operator '|' but got double
+test/in05b:17.33:Error: Expected type integral for argument 1 of operator '<<' but got double
+test/in05b:18.27:Error: Expected type integral for argument 1 of operator '~' but got double
+test/in05b:19.28:Error: Expected type integral for argument 2 of operator '^' but got double
+test/in05b:21.30:Error: Expected type integral for argument 1 of operator '&' but got double

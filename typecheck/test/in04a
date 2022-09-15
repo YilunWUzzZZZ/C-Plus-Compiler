@@ -1,0 +1,20 @@
+/* 
+ * Tests: Empty if-then-else stmt
+ */
+
+	bool condition;
+
+    void open(string file, int flags, int mode) {
+    if (condition);
+	else;
+
+    if (condition)
+		if (condition) ;
+		else;		
+
+    if (condition)
+		if (condition) ;
+		else;
+	else if (condition) ;
+	else ;
+    };

@@ -1,0 +1,5 @@
+test/in06:15.11:Error: Assigned type 'double' not a subtype of target type 'int'
+test/in06:26.57:Error: Expected type integral for argument 2 of operator '%' but got double
+test/in06:34.14:Error: Expected type bool for argument 1 of operator '!' but got int
+test/in06:34.14:Error: Boolean argument expected
+test/in06:35.24:Error: Boolean argument expected

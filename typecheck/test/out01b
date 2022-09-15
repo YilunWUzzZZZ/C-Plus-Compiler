@@ -1,0 +1,1 @@
+test/in01b:21.17:Error: Assigned type 'double' not a subtype of target type 'int'

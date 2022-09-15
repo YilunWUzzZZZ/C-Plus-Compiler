@@ -1,0 +1,28 @@
+/*
+ *   function decl 
+ *
+ *
+ */
+
+    int b,c;
+   
+    bool d=false;
+  
+    unsigned int y; 
+    string s2;
+    
+    
+    string file ;
+    int flags;
+    unsigned int mode;
+
+    int g(int a, int b, double x);
+
+    double f(string s1, int y);
+
+	int main()
+	{
+		g(flags,d,y);
+		f(file,d);
+	}
+
